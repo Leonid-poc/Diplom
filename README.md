@@ -105,9 +105,30 @@ OSRM_BASE_URL=https://router.project-osrm.org    # публичный демо-�
 
 ### 4. Открыть приложение
 
-- Frontend: <http://localhost:3000/>
-- Backend OpenAPI docs: <http://localhost:8000/docs>
-- Backend ReDoc: <http://localhost:8000/redoc>
+Всё ходит через nginx (порт 80):
+
+- Frontend:           <http://localhost/>          (или `http://<server-ip>/`)
+- Backend OpenAPI:    <http://localhost/docs>
+- Backend ReDoc:      <http://localhost/redoc>
+- API endpoints:      <http://localhost/api/v1/...>
+
+### Деплой на сервер
+
+Никакой правки кода / hardcoded IP не требуется:
+
+```bash
+git clone <repo>
+cd programm
+cp .env.example .env
+# при необходимости поменяйте JWT_SECRET и POSTGRES_PASSWORD;
+# больше ничего менять НЕ нужно — фронт ходит на относительный /api/v1
+docker compose up -d --build
+docker compose exec backend python -m app.seeds.seed_oremburg
+docker compose exec backend python -m app.seeds.import_osm_stops
+```
+
+В firewall сервера откройте только TCP **80** (HTTP). При желании добавьте
+TLS-сертификат через Let's Encrypt + Certbot и порт 443.
 
 ## Структура проекта
 
