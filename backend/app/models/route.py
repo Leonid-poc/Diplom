@@ -10,8 +10,10 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
+    Text,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -29,6 +31,11 @@ class Route(Base):
     type: Mapped[str] = mapped_column(String(20), nullable=False, default="городской")
     total_length: Mapped[Decimal] = mapped_column(Numeric(6, 2), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    description: Mapped[str | None] = mapped_column(Text)
+    # Геометрия маршрута: список [lat, lon] точек реальной дороги (из OSRM или DFD).
+    geometry: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    estimated_time_min: Mapped[float | None] = mapped_column(Numeric(7, 1))
+    algorithm: Mapped[str | None] = mapped_column(String(20))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

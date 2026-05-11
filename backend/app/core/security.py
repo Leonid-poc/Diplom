@@ -2,20 +2,29 @@
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
+from jose import jwt
 
 from app.config import settings
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Bcrypt принимает не более 72 байт; обрезаем длинные пароли явно
+_MAX_BCRYPT_BYTES = 72
+
+
+def _normalize(password: str) -> bytes:
+    return password.encode("utf-8")[:_MAX_BCRYPT_BYTES]
 
 
 def hash_password(password: str) -> str:
-    return _pwd_context.hash(password)
+    return bcrypt.hashpw(_normalize(password), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _pwd_context.verify(plain, hashed)
+    try:
+        return bcrypt.checkpw(_normalize(plain), hashed.encode("utf-8"))
+    except (ValueError, TypeError):
+        return False
 
 
 def create_access_token(subject: str | int, extra: dict[str, Any] | None = None) -> str:

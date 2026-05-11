@@ -1,6 +1,14 @@
 "use client";
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  CircleMarker,
+  Popup,
+  Polyline,
+  useMapEvents,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -28,41 +36,96 @@ type Stop = {
   lon: number | string;
 };
 
+type LatLng = [number, number];
+
 type Props = {
   stops?: Stop[];
+  /** Реальная геометрия маршрута (полилиния) — массив [lat, lon]. */
+  routeGeometry?: LatLng[];
+  /** Старый API: только список остановок маршрута — нарисуем по ним. */
   routePath?: Stop[];
+  /** Подсвеченные остановки (например, подобранные вдоль маршрута). */
+  highlightedStops?: Stop[];
+  /** Колбэк при клике на пустое место карты — для добавления остановки. */
+  onMapClick?: (lat: number, lon: number) => void;
   className?: string;
 };
 
-export default function LeafletMap({ stops, routePath, className }: Props) {
-  // Защита от SSR (иногда модуль грузится дважды)
+// Внутренний компонент-хук — слушает клики на карте
+function MapClickHandler({ onClick }: { onClick?: (lat: number, lon: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onClick?.(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+export default function LeafletMap({
+  stops,
+  routeGeometry,
+  routePath,
+  highlightedStops,
+  onMapClick,
+  className,
+}: Props) {
+  const highlightedIds = new Set(highlightedStops?.map((s) => s.id) ?? []);
   useEffect(() => {
     return () => {
       /* cleanup if needed */
     };
   }, []);
 
+  // Определяем точки полилинии
+  const polylinePoints: LatLng[] =
+    routeGeometry && routeGeometry.length > 1
+      ? routeGeometry
+      : routePath && routePath.length > 1
+        ? routePath.map((s) => [Number(s.lat), Number(s.lon)] as LatLng)
+        : [];
+
   return (
     <div className={className ?? "h-[600px] w-full rounded-md overflow-hidden border"}>
       <MapContainer center={[CENTER_LAT, CENTER_LON]} zoom={ZOOM} scrollWheelZoom>
         <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
 
-        {stops?.map((s) => (
-          <Marker key={s.id} position={[Number(s.lat), Number(s.lon)]}>
+        {onMapClick && <MapClickHandler onClick={onMapClick} />}
+
+        {/* Все остановки — мелкими серыми точками (фон) */}
+        {stops?.map((s) =>
+          highlightedIds.has(s.id) ? null : (
+            <CircleMarker
+              key={s.id}
+              center={[Number(s.lat), Number(s.lon)]}
+              radius={4}
+              pathOptions={{ color: "#888", fillColor: "#bbb", fillOpacity: 0.5, weight: 1 }}
+            >
+              <Popup>
+                <strong>{s.name}</strong>
+                <br />
+                {Number(s.lat).toFixed(5)}, {Number(s.lon).toFixed(5)}
+              </Popup>
+            </CircleMarker>
+          ),
+        )}
+
+        {polylinePoints.length > 1 && (
+          <Polyline
+            positions={polylinePoints}
+            pathOptions={{ color: "#1B5E97", weight: 5, opacity: 0.85 }}
+          />
+        )}
+
+        {/* Подсвеченные остановки (вдоль маршрута) — крупными маркерами */}
+        {highlightedStops?.map((s, idx) => (
+          <Marker key={`hl-${s.id}`} position={[Number(s.lat), Number(s.lon)]}>
             <Popup>
-              <strong>{s.name}</strong>
+              <strong>#{idx + 1}. {s.name}</strong>
               <br />
               {Number(s.lat).toFixed(5)}, {Number(s.lon).toFixed(5)}
             </Popup>
           </Marker>
         ))}
-
-        {routePath && routePath.length > 1 && (
-          <Polyline
-            positions={routePath.map((s) => [Number(s.lat), Number(s.lon)] as [number, number])}
-            pathOptions={{ color: "#1B5E97", weight: 5 }}
-          />
-        )}
       </MapContainer>
     </div>
   );

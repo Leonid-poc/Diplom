@@ -44,6 +44,18 @@ class Settings(BaseSettings):
     vis_base_url: str = Field(default="", alias="VIS_BASE_URL")
     vis_api_key: str = Field(default="", alias="VIS_API_KEY")
 
+    # --- OSRM (маршрутизация по реальным дорогам) ---
+    osrm_base_url: str = Field(
+        default="https://router.project-osrm.org",
+        alias="OSRM_BASE_URL",
+    )
+
+    # --- Overpass API (импорт остановок из OSM) ---
+    overpass_url: str = Field(
+        default="https://overpass-api.de/api/interpreter",
+        alias="OVERPASS_URL",
+    )
+
     @property
     def cors_origins(self) -> List[str]:
         return [o.strip() for o in self.cors_origins_raw.split(",") if o.strip()]

@@ -103,3 +103,79 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     dlam = math.radians(lon2 - lon1)
     a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlam / 2) ** 2
     return 2 * R * math.asin(math.sqrt(a))
+
+
+def find_stops_along_route(
+    polyline: list[tuple[float, float]],
+    candidate_stops: list[tuple[int, float, float]],
+    max_dist_m: float = 80.0,
+    min_spacing_m: float = 200.0,
+) -> list[tuple[int, int, float]]:
+    """Найти остановки, попадающие на линию маршрута (с допуском max_dist_m).
+
+    :param polyline: реальная геометрия маршрута [(lat, lon), …] (например, из OSRM)
+    :param candidate_stops: список всех остановок [(stop_id, lat, lon), …]
+    :param max_dist_m: максимальное расстояние от остановки до линии (в метрах)
+    :param min_spacing_m: минимальный интервал между подобранными остановками
+                          (фильтрует дубли «обе стороны улицы»)
+    :returns: [(stop_id, vertex_index, distance_m), …] упорядочено вдоль маршрута
+    """
+    if len(polyline) < 2:
+        return []
+
+    # Bbox-прескрин: переводим max_dist_m в градусы (~ 1° ≈ 111 км)
+    lats = [p[0] for p in polyline]
+    lons = [p[1] for p in polyline]
+    margin_deg = (max_dist_m / 111_000.0) * 2.0
+    min_lat, max_lat = min(lats) - margin_deg, max(lats) + margin_deg
+    min_lon, max_lon = min(lons) - margin_deg, max(lons) + margin_deg
+
+    matches: list[tuple[int, int, float]] = []
+    for stop_id, slat, slon in candidate_stops:
+        # 1. быстрый bbox-фильтр
+        if not (min_lat <= slat <= max_lat and min_lon <= slon <= max_lon):
+            continue
+        # 2. ближайшая вершина полилинии
+        best_idx = -1
+        best_km = float("inf")
+        for i, (plat, plon) in enumerate(polyline):
+            d = haversine_km(slat, slon, plat, plon)
+            if d < best_km:
+                best_km = d
+                best_idx = i
+        best_m = best_km * 1000.0
+        if best_m <= max_dist_m:
+            matches.append((stop_id, best_idx, best_m))
+
+    # Сортируем по положению вдоль маршрута
+    matches.sort(key=lambda x: x[1])
+
+    # Прореживание: если две остановки слишком близко (например, обе стороны улицы)
+    # — оставляем ту, что ближе к линии.
+    filtered: list[tuple[int, int, float]] = []
+    for m in matches:
+        if not filtered:
+            filtered.append(m)
+            continue
+        prev = filtered[-1]
+        # Дистанция «вдоль маршрута» приближённо как разница позиций
+        # (точнее можно через накопленные длины сегментов).
+        approx_along_m = _segment_length_m(polyline, prev[1], m[1])
+        if approx_along_m < min_spacing_m:
+            # выбираем ту, что ближе к линии
+            if m[2] < prev[2]:
+                filtered[-1] = m
+        else:
+            filtered.append(m)
+    return filtered
+
+
+def _segment_length_m(polyline: list[tuple[float, float]], i: int, j: int) -> float:
+    """Длина отрезка полилинии между вершинами i и j (в метрах)."""
+    if i == j:
+        return 0.0
+    a, b = (i, j) if i < j else (j, i)
+    total_km = 0.0
+    for k in range(a, b):
+        total_km += haversine_km(*polyline[k], *polyline[k + 1])
+    return total_km * 1000.0

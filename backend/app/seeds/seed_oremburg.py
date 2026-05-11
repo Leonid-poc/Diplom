@@ -7,12 +7,15 @@ from decimal import Decimal
 from sqlalchemy import select
 
 from app.core.security import hash_password
-from app.database import SessionLocal
+from app.database import Base, SessionLocal, engine
 from app.models.bus_stop import BusStop, BusStopConnection
 from app.models.route import Route
 from app.models.user import User, UserRole
 from app.models.vehicle import Vehicle, VehicleModel, VehicleType
 from app.services.route_engine import haversine_km
+
+# Импортируем все модели, чтобы Base.metadata их знала
+import app.models  # noqa: F401
 
 
 USERS = [
@@ -70,6 +73,12 @@ BUS_STOPS = [
 
 
 def seed() -> None:
+    # Страховка: создаём таблицы и добавляем недостающие колонки.
+    # Идемпотентно — существующие объекты не трогаются.
+    from app.core.schema_sync import ensure_schema
+    ensure_schema()
+    print("[+] Схема БД проверена (ensure_schema)")
+
     db = SessionLocal()
     try:
         # ----- Users -----

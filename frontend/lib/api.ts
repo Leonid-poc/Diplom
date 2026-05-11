@@ -72,13 +72,24 @@ export type Route = {
   updated_at: string;
 };
 
+export type MatchedStop = {
+  id: number;
+  name: string;
+  lat: number;
+  lon: number;
+  distance_from_route_m: number;
+};
+
 export type BuildRouteResponse = {
   path: number[];
+  matched_stops: MatchedStop[];
+  geometry: [number, number][];  // [[lat, lon], ...]
   total_distance_km: number;
   estimated_time_min: number;
   required_vehicles: number;
   interval_min: number;
   algorithm: string;
+  source: "osrm" | "graph";
 };
 
 export type ClusterPoint = {
