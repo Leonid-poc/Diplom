@@ -33,6 +33,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+# Lock-файлы могут различаться между Windows и Linux —
+# при деплое на сервер дешевле сгенерировать заново.
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
 
 # ============ Docker / Infra ============
 postgres_data/
