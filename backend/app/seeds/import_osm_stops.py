@@ -102,15 +102,23 @@ def main() -> int:
     print(f"[*] Запрос Overpass: {scope}")
     print("[*] Это может занять 10–60 секунд, ожидайте…")
 
+    stops: list[dict] = []
     try:
         stops = fetch_stops(query)
     except Exception as e:
         print(f"[!] Ошибка Overpass: {e}")
-        if not args.bbox and args.city == "Оренбург":
-            print("[*] Пробую fallback по bounding box Оренбурга…")
+
+    # Если поиск по городу не дал результатов — пробуем bbox
+    if not stops and not args.bbox and args.city == "Оренбург":
+        print("[*] Поиск по имени города не дал результатов, пробую bbox Оренбурга…")
+        try:
             stops = fetch_stops(build_query_by_bbox(*OREMBURG_BBOX))
-        else:
+        except Exception as e:
+            print(f"[!] Ошибка bbox-запроса: {e}")
             return 2
+    elif not stops:
+        print("[!] Ничего не найдено. Попробуйте --bbox или другое название.")
+        return 3
 
     print(f"[+] Получено {len(stops)} остановок из OSM")
     if not stops:
