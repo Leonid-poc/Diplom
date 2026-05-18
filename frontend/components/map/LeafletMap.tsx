@@ -38,6 +38,14 @@ type Stop = {
 
 type LatLng = [number, number];
 
+type Waypoint = {
+  id: number;
+  name: string;
+  lat: number;
+  lon: number;
+  label: string;
+};
+
 type Props = {
   stops?: Stop[];
   /** Реальная геометрия маршрута (полилиния) — массив [lat, lon]. */
@@ -46,6 +54,8 @@ type Props = {
   routePath?: Stop[];
   /** Подсвеченные остановки (например, подобранные вдоль маршрута). */
   highlightedStops?: Stop[];
+  /** Промежуточные точки с буквенными метками. */
+  waypoints?: Waypoint[];
   /** Колбэк при клике на пустое место карты — для добавления остановки. */
   onMapClick?: (lat: number, lon: number) => void;
   className?: string;
@@ -66,6 +76,7 @@ export default function LeafletMap({
   routeGeometry,
   routePath,
   highlightedStops,
+  waypoints,
   onMapClick,
   className,
 }: Props) {
@@ -115,6 +126,31 @@ export default function LeafletMap({
             pathOptions={{ color: "#1B5E97", weight: 5, opacity: 0.85 }}
           />
         )}
+
+        {/* Промежуточные точки — буквенные маркеры */}
+        {waypoints?.map((wp) => (
+          <Marker
+            key={`wp-${wp.id}`}
+            position={[wp.lat, wp.lon]}
+            icon={L.divIcon({
+              className: "",
+              html: `<div style="
+                display:flex;align-items:center;justify-content:center;
+                width:24px;height:24px;border-radius:50%;
+                background:#E67E22;color:#fff;font-size:11px;font-weight:700;
+                border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);
+              ">${wp.label}</div>`,
+              iconSize: [24, 24],
+              iconAnchor: [12, 12],
+            })}
+          >
+            <Popup>
+              <strong>{wp.label}. {wp.name}</strong>
+              <br />
+              {wp.lat.toFixed(5)}, {wp.lon.toFixed(5)}
+            </Popup>
+          </Marker>
+        ))}
 
         {/* Подсвеченные остановки (вдоль маршрута) — крупными маркерами */}
         {highlightedStops?.map((s, idx) => (
