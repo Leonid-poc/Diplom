@@ -21,7 +21,7 @@ DEFAULT_OVERPASS_URL = OVERPASS_MIRRORS[0]
 
 # Overpass требует осмысленный User-Agent; без него часть инстансов отвечает 406/429.
 REQUEST_HEADERS = {
-    "User-Agent": "pis-marshrut/1.0 (ОГУ диплом; +https://github.com/example/pis-marshrut)",
+    "User-Agent": "pis-marshrut/1.0 (OSU diploma; +https://github.com/example/pis-marshrut)",
     "Accept": "application/json,text/plain;q=0.9,*/*;q=0.1",
     "Accept-Encoding": "gzip, deflate",
 }
