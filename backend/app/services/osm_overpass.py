@@ -13,7 +13,7 @@ import httpx
 # Список зеркал Overpass — пробуем по очереди, если основной не отвечает.
 OVERPASS_MIRRORS = [
     "https://overpass-api.de/api/interpreter",
-    "https://overpass.kumi.systems/api/interpreter",
+    "https://overpass.openstreetmap.ru/api/interpreter",
     "https://lz4.overpass-api.de/api/interpreter",
     "https://z.overpass-api.de/api/interpreter",
 ]
@@ -57,9 +57,31 @@ def build_query_by_bbox(south: float, west: float, north: float, east: float) ->
 
 
 def _post_one(url: str, query: str, timeout_s: float) -> dict[str, Any]:
-    """Один запрос к конкретному Overpass-инстансу."""
-    with httpx.Client(timeout=timeout_s, headers=REQUEST_HEADERS, follow_redirects=True) as client:
-        r = client.post(url, data={"data": query})
+    """Один запрос к конкретному Overpass-инстансу.
+
+    Пробует GET (query в URL), затем POST с form-encoded телом.
+    """
+    from urllib.parse import urlencode
+
+    headers = {
+        "User-Agent": REQUEST_HEADERS["User-Agent"],
+    }
+
+    with httpx.Client(timeout=timeout_s, headers=headers, follow_redirects=True) as client:
+        # Способ 1: GET — наиболее совместимый метод
+        try:
+            r = client.get(url, params={"data": query})
+            r.raise_for_status()
+            return r.json()
+        except httpx.HTTPStatusError:
+            pass
+
+        # Способ 2: POST с явным form-encoded телом
+        r = client.post(
+            url,
+            content=urlencode({"data": query}),
+            headers={**headers, "Content-Type": "application/x-www-form-urlencoded"},
+        )
         r.raise_for_status()
         return r.json()
 
