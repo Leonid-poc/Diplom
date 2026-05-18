@@ -40,9 +40,48 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument("--admin-level", type=int, default=6, help="OSM admin_level (default 6)")
     p.add_argument("--neighbours", type=int, default=4, help="Сколько ближайших соседей соединять")
+    p.add_argument(
+        "--merge-radius", type=float, default=50.0,
+        help="Расстояние в метрах для объединения дубликатов (остановки на разных сторонах улицы). По умолчанию 50 м.",
+    )
     p.add_argument("--no-graph", action="store_true", help="Не строить граф связности")
     p.add_argument("--clear", action="store_true", help="Удалить все остановки/связи перед импортом")
+    p.add_argument("--dry-run", action="store_true", help="Только запросить OSM и показать статистику, без записи в БД")
     return p.parse_args()
+
+
+def _deduplicate_by_proximity(
+    stops: list[dict],
+    radius_m: float,
+) -> list[dict]:
+    """Объединить остановки, находящиеся ближе radius_m метров друг от друга.
+
+    Для каждой пары в пределах радиуса оставляет ту, у которой:
+    - есть павильон (has_pavilion=True), либо
+    - более полный адрес, либо
+    - первая по порядку.
+    """
+    if len(stops) <= 1:
+        return stops
+
+    # Сортируем: с павильоном — выше приоритет
+    stops = sorted(stops, key=lambda s: (not s["has_pavilion"], s.get("address") or "" == ""))
+    kept: list[dict] = []
+    kept_coords: list[tuple[float, float]] = []
+
+    for s in stops:
+        slat, slon = s["lat"], s["lon"]
+        too_close = False
+        for klat, klon in kept_coords:
+            d = haversine_km(slat, slon, klat, klon) * 1000.0
+            if d < radius_m:
+                too_close = True
+                break
+        if not too_close:
+            kept.append(s)
+            kept_coords.append((slat, slon))
+
+    return kept
 
 
 def main() -> int:
@@ -77,6 +116,24 @@ def main() -> int:
     if not stops:
         print("[!] Ничего не найдено. Попробуйте --bbox или другое название.")
         return 3
+
+    # Дедупликация по близости (остановки на разных сторонах улицы)
+    if args.merge_radius > 0:
+        before = len(stops)
+        stops = _deduplicate_by_proximity(stops, args.merge_radius)
+        removed = before - len(stops)
+        if removed:
+            print(f"[*] Дедупликация по близости ({args.merge_radius} м): удалено {removed} дубликатов")
+
+    # Статистика для dry-run
+    with_pavilion = sum(1 for s in stops if s["has_pavilion"])
+    with_address = sum(1 for s in stops if s.get("address"))
+    print(f"[*] Статистика: {len(stops)} остановок, {with_pavilion} с павильоном, {with_address} с адресом")
+
+    if args.dry_run:
+        print("[*] --dry-run: запись в БД пропущена")
+        print("=== ГОТОВО (предпросмотр) ===")
+        return 0
 
     db = SessionLocal()
     try:
