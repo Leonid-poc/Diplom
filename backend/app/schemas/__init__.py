@@ -7,10 +7,13 @@ from app.schemas.bus_stop import (
     BusStopConnectionRead,
 )
 from app.schemas.route import (
+    MatchedStop,
     RouteCreate,
+    RouteDetailRead,
     RouteRead,
     RouteBuildRequest,
     RouteBuildResponse,
+    RouteStopDetail,
 )
 from app.schemas.vehicle import (
     VehicleTypeCreate,
@@ -34,7 +37,7 @@ __all__ = [
     "LoginRequest", "TokenResponse", "UserPublic",
     "BusStopCreate", "BusStopRead",
     "BusStopConnectionCreate", "BusStopConnectionRead",
-    "RouteCreate", "RouteRead", "RouteBuildRequest", "RouteBuildResponse",
+    "MatchedStop", "RouteCreate", "RouteDetailRead", "RouteRead", "RouteBuildRequest", "RouteBuildResponse", "RouteStopDetail",
     "VehicleTypeCreate", "VehicleTypeRead",
     "VehicleModelCreate", "VehicleModelRead",
     "VehicleCreate", "VehicleRead",
