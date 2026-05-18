@@ -14,7 +14,9 @@ from app.schemas.route import (
     RouteBuildRequest,
     RouteBuildResponse,
     RouteCreate,
+    RouteDetailRead,
     RouteRead,
+    RouteStopDetail,
 )
 from app.schemas.route import MatchedStop
 from app.services.osrm_router import OsrmRouter
@@ -54,12 +56,41 @@ def create_route(
     return route
 
 
-@router.get("/{route_id}", response_model=RouteRead)
+@router.get("/{route_id}", response_model=RouteDetailRead)
 def get_route(route_id: int, db: Session = Depends(get_db), _user: User = Depends(get_current_user)):
     route = db.get(Route, route_id)
     if not route:
         raise NotFoundError("Маршрут")
-    return route
+
+    # Собираем остановки с координатами через relationship route.stops
+    stop_rows = {s.id: s for s in db.execute(select(BusStop)).scalars().all()}
+    detail_stops: list[RouteStopDetail] = []
+    for bsr in route.stops:
+        s = stop_rows.get(bsr.stop_id)
+        if s:
+            detail_stops.append(RouteStopDetail(
+                stop_id=bsr.stop_id,
+                name=s.name,
+                lat=float(s.lat),
+                lon=float(s.lon),
+                order_num=bsr.order_num,
+            ))
+
+    return RouteDetailRead(
+        id=route.id,
+        route_number=route.route_number,
+        name=route.name,
+        type=route.type,
+        total_length=route.total_length,
+        is_active=route.is_active,
+        description=route.description,
+        geometry=route.geometry,
+        estimated_time_min=float(route.estimated_time_min) if route.estimated_time_min else None,
+        algorithm=route.algorithm,
+        created_at=route.created_at,
+        updated_at=route.updated_at,
+        stops=detail_stops,
+    )
 
 
 @router.delete("/{route_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -164,20 +195,30 @@ def build_route(
 
     # Fallback на локальный граф связности
     engine = RouteEngine.from_db(db)
-    result = engine.shortest_path(
-        src=payload.start_stop_id,
-        dst=payload.end_stop_id,
-        algo=payload.algorithm,
-    )
+    all_stop_ids = [payload.start_stop_id, *payload.via_stop_ids, payload.end_stop_id]
+    result = engine.shortest_path_multi(all_stop_ids, algo=payload.algorithm)
     length = result.total_distance_km
     time = result.estimated_time_min
 
     # Геометрия из БД-остановок маршрута
-    stop_rows = {s.id: s for s in db.execute(select(BusStop)).scalars().all()}
-    geometry = [[float(stop_rows[i].lat), float(stop_rows[i].lon)] for i in result.path if i in stop_rows]
+    all_stops = {s.id: s for s in db.execute(select(BusStop)).scalars().all()}
+    ordered_ids = result.path
+    geometry = [[float(all_stops[i].lat), float(all_stops[i].lon)] for i in ordered_ids if i in all_stops]
+    matched_stops = [
+        MatchedStop(
+            id=sid,
+            name=all_stops[sid].name,
+            lat=float(all_stops[sid].lat),
+            lon=float(all_stops[sid].lon),
+            distance_from_route_m=0.0,
+        )
+        for sid in ordered_ids
+        if sid in all_stops
+    ]
 
     return RouteBuildResponse(
-        path=result.path,
+        path=ordered_ids,
+        matched_stops=matched_stops,
         geometry=geometry,
         total_distance_km=round(length, 2),
         estimated_time_min=round(time, 1),
