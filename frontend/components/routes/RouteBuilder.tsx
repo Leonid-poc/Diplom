@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Save, MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import { Save, MapPin, ChevronDown, ChevronUp, Plus, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ export function RouteBuilder() {
 
   const [start, setStart] = useState<number | null>(null);
   const [end, setEnd] = useState<number | null>(null);
+  const [viaStops, setViaStops] = useState<number[]>([]);
   const [algo, setAlgo] = useState<Algorithm>("osrm");
   const [snapRadius, setSnapRadius] = useState(80);  // метры
   const [minSpacing, setMinSpacing] = useState(200); // метры
@@ -45,6 +46,7 @@ export function RouteBuilder() {
         body: {
           start_stop_id: start,
           end_stop_id: end,
+          via_stop_ids: viaStops,
           algorithm: algo,
           snap_radius_m: snapRadius,
           min_stop_spacing_m: minSpacing,
@@ -110,6 +112,25 @@ export function RouteBuilder() {
     [result],
   );
 
+  // Промежуточные точки с буквенными метками
+  const waypoints = useMemo(() => {
+    const labels: { id: number; name: string; lat: number; lon: number; label: string }[] = [];
+    if (start) {
+      const s = stopById.get(start);
+      if (s) labels.push({ id: s.id, name: s.name, lat: Number(s.lat), lon: Number(s.lon), label: "A" });
+    }
+    viaStops.forEach((vid, i) => {
+      const s = stopById.get(vid);
+      if (s) labels.push({ id: s.id, name: s.name, lat: Number(s.lat), lon: Number(s.lon), label: `B${i + 1}` });
+    });
+    if (end) {
+      const s = stopById.get(end);
+      const lastChar = String.fromCharCode(65 + viaStops.length + 1); // C, D, E...
+      if (s) labels.push({ id: s.id, name: s.name, lat: Number(s.lat), lon: Number(s.lon), label: lastChar });
+    }
+    return labels;
+  }, [start, end, viaStops, stopById]);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-1 space-y-4">
@@ -144,6 +165,52 @@ export function RouteBuilder() {
                 ))}
               </select>
             </div>
+            {/* ----- Промежуточные остановки ----- */}
+            <div className="space-y-2 border-t pt-3">
+              <div className="flex items-center justify-between">
+                <Label>Промежуточные остановки</Label>
+                <span className="text-xs text-muted-foreground">{viaStops.length}</span>
+              </div>
+              {viaStops.length > 0 && (
+                <div className="max-h-[160px] overflow-y-auto border rounded bg-muted/20">
+                  {viaStops.map((vid, idx) => {
+                    const s = stopById.get(vid);
+                    return (
+                      <div key={vid} className="flex items-center gap-2 px-2 py-1.5 border-b last:border-b-0 text-xs">
+                        <MapPin size={12} className="shrink-0 text-amber-500" />
+                        <span className="flex-1 truncate">{s?.name ?? `#${vid}`}</span>
+                        <button
+                          type="button"
+                          onClick={() => setViaStops((prev) => prev.filter((_, i) => i !== idx))}
+                          className="shrink-0 hover:text-destructive"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              <div className="flex gap-1">
+                <select
+                  className="flex-1 border rounded-md h-9 px-2 text-xs bg-background"
+                  value=""
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    if (v && !viaStops.includes(v)) setViaStops((prev) => [...prev, v]);
+                    e.target.value = "";
+                  }}
+                >
+                  <option value="">+ Добавить</option>
+                  {stopsQ.data
+                    ?.filter((s) => s.id !== start && s.id !== end && !viaStops.includes(s.id))
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                </select>
+              </div>
+            </div>
+
             <div className="space-y-1">
               <Label>Алгоритм</Label>
               <select
@@ -360,6 +427,7 @@ export function RouteBuilder() {
               stops={stopsQ.data ?? []}
               routeGeometry={result?.geometry as [number, number][] | undefined}
               highlightedStops={highlightedStops}
+              waypoints={waypoints}
               className="h-full w-full rounded-b-md overflow-hidden"
             />
           </CardContent>
