@@ -120,12 +120,22 @@ def fetch_stops(
         if lat is None or lon is None:
             continue
 
+        # Собираем адрес: улица + номер дома
+        street = tags.get("addr:street") or ""
+        housenumber = tags.get("addr:housenumber") or ""
+        address_parts = []
+        if street:
+            address_parts.append(street.strip())
+        if housenumber:
+            address_parts.append(housenumber.strip())
+        address = " ".join(address_parts)[:160] if address_parts else None
+
         stops.append({
             "name": name[:120],
             "lat": float(lat),
             "lon": float(lon),
             "osm_id": el.get("id"),
-            "address": (tags.get("addr:street") or "")[:160] or None,
+            "address": address,
             "has_pavilion": tags.get("shelter") in ("yes", "true", "1"),
         })
 
