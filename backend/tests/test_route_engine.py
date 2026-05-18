@@ -57,6 +57,31 @@ def test_interval_min_floor():
     assert calc_interval_min(10.0, 40.0) >= 3
 
 
+def test_multi_stop_path():
+    """Маршрут через промежуточную точку: 1 → 2 → 3."""
+    engine = make_simple_engine()
+    res = engine.shortest_path_multi([1, 2, 3], algo="dijkstra")
+    # 1 → 2 (5.0 км), 2 → 3 (5.0 км) = 10.0 км
+    assert res.path == [1, 2, 3]
+    assert res.total_distance_km == pytest.approx(10.0)
+    assert res.estimated_time_min == pytest.approx(20.0)
+
+
+def test_multi_stop_skips_duplicate_junction():
+    """Путь 1 → 3 → 1: на стыке 3 не должен дублироваться."""
+    engine = make_simple_engine()
+    res = engine.shortest_path_multi([1, 3, 1], algo="dijkstra")
+    # 1 → 3 (7.0 км), 3 → 1 (7.0 км) = 14.0 км
+    assert res.path == [1, 3, 1]
+    assert res.total_distance_km == pytest.approx(14.0)
+
+
+def test_multi_stop_too_few_stops():
+    engine = make_simple_engine()
+    with pytest.raises(RoutingError):
+        engine.shortest_path_multi([1])
+
+
 def test_haversine_known_distance():
     # Москва — Санкт-Петербург ≈ 635 км
     d = haversine_km(55.7558, 37.6173, 59.9343, 30.3351)
