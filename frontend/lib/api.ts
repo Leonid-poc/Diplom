@@ -72,6 +72,21 @@ export type Route = {
   updated_at: string;
 };
 
+export type RouteStopDetail = {
+  stop_id: number;
+  name: string;
+  lat: number;
+  lon: number;
+  order_num: number;
+};
+
+export type RouteDetail = Route & {
+  geometry: [number, number][];
+  estimated_time_min: number | null;
+  algorithm: string | null;
+  stops: RouteStopDetail[];
+};
+
 export type MatchedStop = {
   id: number;
   name: string;
