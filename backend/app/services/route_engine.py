@@ -71,6 +71,37 @@ class RouteEngine:
         total_time = self._total_time(path) or (total_dist / 35.0) * 60.0
         return RouteResult(path=path, total_distance_km=total_dist, estimated_time_min=total_time)
 
+    def shortest_path_multi(self, stop_ids: list[int], algo: str = "dijkstra") -> RouteResult:
+        """Построить маршрут через несколько точек: A → B → D → C.
+
+        Для каждой пары последовательных остановок ищет кратчайший путь,
+        затем склеивает сегменты, убирая дубликаты на стыках.
+        """
+        if len(stop_ids) < 2:
+            raise RoutingError("Нужно минимум 2 остановки для построения маршрута")
+
+        full_path: list[int] = []
+        total_dist = 0.0
+        total_time = 0.0
+
+        for i in range(len(stop_ids) - 1):
+            src = stop_ids[i]
+            dst = stop_ids[i + 1]
+            seg = self.shortest_path(src, dst, algo=algo)
+            # Склеиваем пути: убираем первый элемент, если он уже в хвосте full_path
+            if full_path and full_path[-1] == seg.path[0]:
+                full_path.extend(seg.path[1:])
+            else:
+                full_path.extend(seg.path)
+            total_dist += seg.total_distance_km
+            total_time += seg.estimated_time_min
+
+        return RouteResult(
+            path=full_path,
+            total_distance_km=total_dist,
+            estimated_time_min=total_time,
+        )
+
     def _total_length(self, path: list[int]) -> float:
         return sum(self.graph[u][v]["weight"] for u, v in zip(path, path[1:]))
 
