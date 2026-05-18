@@ -43,6 +43,36 @@ class RouteRead(BaseModel):
     updated_at: datetime
 
 
+class RouteStopDetail(BaseModel):
+    """Остановка в составе маршрута с координатами."""
+    model_config = ConfigDict(from_attributes=True)
+
+    stop_id: int
+    name: str
+    lat: float
+    lon: float
+    order_num: int
+
+
+class RouteDetailRead(BaseModel):
+    """Расширенная карточка маршрута со списком остановок."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    route_number: str
+    name: str
+    type: str
+    total_length: Decimal
+    is_active: bool
+    description: str | None = None
+    geometry: list[list[float]] = Field(default_factory=list)
+    estimated_time_min: float | None = None
+    algorithm: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    stops: list[RouteStopDetail] = Field(default_factory=list)
+
+
 # ----- Расчёт маршрута -----
 
 class RouteBuildRequest(BaseModel):
