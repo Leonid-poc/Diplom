@@ -20,7 +20,7 @@ import { api, ApiError, type BusStop } from "@/lib/api";
 
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), {
   ssr: false,
-  loading: () => <div className="h-[500px] bg-muted animate-pulse rounded-md" />,
+  loading: () => <div className="h-[350px] sm:h-[500px] lg:h-[600px] bg-muted animate-pulse rounded-md" />,
 });
 
 export default function AdminPage() {
@@ -78,10 +78,10 @@ export default function AdminPage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">НСИ — справочники</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">НСИ — справочники</h1>
         <Dialog open={open} onOpenChange={setOpen}>
-          <Button onClick={() => setOpen(true)}>
+          <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
             <Plus size={16} className="mr-1" />
             Добавить остановку
           </Button>
@@ -149,12 +149,12 @@ export default function AdminPage() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Остановочные пункты ({stopsQ.data?.length ?? 0})</CardTitle>
           </CardHeader>
-          <CardContent className="p-0 max-h-[600px] overflow-y-auto">
+          <CardContent className="p-0 max-h-[60vh] lg:max-h-[600px] overflow-y-auto">
             {stopsQ.isLoading ? (
               <div className="p-6 text-sm text-muted-foreground">Загрузка…</div>
             ) : (
@@ -163,7 +163,7 @@ export default function AdminPage() {
                   <TableRow>
                     <TableHead>ID</TableHead>
                     <TableHead>Название</TableHead>
-                    <TableHead>Координаты</TableHead>
+                    <TableHead className="hidden sm:table-cell">Координаты</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -172,7 +172,7 @@ export default function AdminPage() {
                     <TableRow key={s.id}>
                       <TableCell>{s.id}</TableCell>
                       <TableCell>{s.name}</TableCell>
-                      <TableCell className="font-mono text-xs">
+                      <TableCell className="hidden sm:table-cell font-mono text-xs">
                         {Number(s.lat).toFixed(5)}, {Number(s.lon).toFixed(5)}
                       </TableCell>
                       <TableCell>
@@ -203,7 +203,7 @@ export default function AdminPage() {
               Кликните по карте, чтобы добавить остановку в этой точке
             </p>
           </CardHeader>
-          <CardContent className="h-[600px] p-0">
+          <CardContent className="h-[350px] sm:h-[500px] lg:h-[600px] p-0">
             <LeafletMap
               stops={stopsQ.data ?? []}
               onMapClick={handleMapClick}

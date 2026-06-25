@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -8,6 +8,7 @@ import {
   Popup,
   Polyline,
   useMapEvents,
+  useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -71,6 +72,22 @@ function MapClickHandler({ onClick }: { onClick?: (lat: number, lon: number) => 
   return null;
 }
 
+// Внутренний компонент — сообщает карте инвалидировать размер при изменении children
+function MapResizeHandler() {
+  const map = useMap();
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    // Небольшая задержка, чтобы DOM обновился
+    const t = setTimeout(() => map.invalidateSize(), 100);
+    return () => clearTimeout(t);
+  });
+  return null;
+}
+
 export default function LeafletMap({
   stops,
   routeGeometry,
@@ -81,11 +98,6 @@ export default function LeafletMap({
   className,
 }: Props) {
   const highlightedIds = new Set(highlightedStops?.map((s) => s.id) ?? []);
-  useEffect(() => {
-    return () => {
-      /* cleanup if needed */
-    };
-  }, []);
 
   // Определяем точки полилинии
   const polylinePoints: LatLng[] =
@@ -96,11 +108,17 @@ export default function LeafletMap({
         : [];
 
   return (
-    <div className={className ?? "h-[600px] w-full rounded-md overflow-hidden border"}>
-      <MapContainer center={[CENTER_LAT, CENTER_LON]} zoom={ZOOM} scrollWheelZoom>
+    <div className={className ?? "h-[350px] sm:h-[450px] md:h-[600px] w-full rounded-md overflow-hidden border"}>
+      <MapContainer
+        center={[CENTER_LAT, CENTER_LON]}
+        zoom={ZOOM}
+        scrollWheelZoom
+        className="h-full w-full"
+      >
         <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
 
         {onMapClick && <MapClickHandler onClick={onMapClick} />}
+        <MapResizeHandler />
 
         {/* Все остановки — мелкими серыми точками (фон) */}
         {stops?.map((s) =>

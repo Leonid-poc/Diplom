@@ -20,7 +20,7 @@ import { api, ApiError, type BusStop, type BuildRouteResponse } from "@/lib/api"
 
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), {
   ssr: false,
-  loading: () => <div className="h-[500px] bg-muted animate-pulse rounded-md" />,
+  loading: () => <div className="h-[350px] sm:h-[450px] lg:h-[700px] bg-muted animate-pulse rounded-md" />,
 });
 
 type Algorithm = "osrm" | "dijkstra" | "astar";
@@ -132,7 +132,8 @@ export function RouteBuilder() {
   }, [start, end, viaStops, stopById]);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Левая колонка — параметры и результат */}
       <div className="lg:col-span-1 space-y-4">
         <Card>
           <CardHeader>
@@ -312,7 +313,7 @@ export function RouteBuilder() {
                       onClick={() => setStopsExpanded((v) => !v)}
                       className="flex w-full items-center justify-between hover:bg-muted/50 rounded px-1 py-1"
                     >
-                      <span className="font-medium">
+                      <span className="font-medium text-xs sm:text-sm">
                         Остановок по пути:{" "}
                         <span className={isOk ? "text-primary" : "text-destructive"}>
                           {stopsCount}
@@ -327,7 +328,7 @@ export function RouteBuilder() {
                     </button>
 
                     {stopsExpanded && stops.length > 0 && (
-                      <div className="mt-2 max-h-[300px] overflow-y-auto border rounded bg-muted/20">
+                      <div className="mt-2 max-h-[250px] sm:max-h-[300px] overflow-y-auto border rounded bg-muted/20">
                         {stops.map((s, idx) => (
                           <div
                             key={s.id}
@@ -417,12 +418,13 @@ export function RouteBuilder() {
 
       </div>
 
+      {/* Правая колонка — карта */}
       <div className="lg:col-span-2">
         <Card>
           <CardHeader>
             <CardTitle>Карта</CardTitle>
           </CardHeader>
-          <CardContent className="h-[700px] p-0">
+          <CardContent className="h-[350px] sm:h-[450px] lg:h-[700px] p-0">
             <LeafletMap
               stops={stopsQ.data ?? []}
               routeGeometry={result?.geometry as [number, number][] | undefined}

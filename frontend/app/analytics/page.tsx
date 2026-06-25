@@ -33,14 +33,14 @@ export default function AnalyticsPage() {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-bold mb-6">Кластерный анализ маршрутов</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Кластерный анализ маршрутов</h1>
 
-      <Card className="mb-6">
+      <Card className="mb-4 sm:mb-6">
         <CardHeader>
           <CardTitle>Параметры анализа</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-end gap-4">
-          <div className="space-y-1">
+        <CardContent className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-end gap-3 sm:gap-4">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label>Период (дней)</Label>
             <Input
               type="number"
@@ -48,10 +48,10 @@ export default function AnalyticsPage() {
               max={365}
               value={periodDays}
               onChange={(e) => setPeriodDays(Number(e.target.value))}
-              className="w-32"
+              className="w-full sm:w-32"
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 w-full sm:w-auto">
             <Label>Число кластеров (k)</Label>
             <Input
               type="number"
@@ -59,13 +59,17 @@ export default function AnalyticsPage() {
               max={10}
               value={nClusters}
               onChange={(e) => setNClusters(Number(e.target.value))}
-              className="w-32"
+              className="w-full sm:w-32"
             />
           </div>
-          <Button disabled={mut.isPending} onClick={() => mut.mutate()}>
+          <Button
+            className="w-full sm:w-auto"
+            disabled={mut.isPending}
+            onClick={() => mut.mutate()}
+          >
             {mut.isPending ? "Анализ…" : "Запустить анализ"}
           </Button>
-          {error && <p className="text-sm text-destructive ml-4">{error}</p>}
+          {error && <p className="text-sm text-destructive w-full">{error}</p>}
         </CardContent>
       </Card>
 
@@ -80,9 +84,9 @@ export default function AnalyticsPage() {
                 <TableRow>
                   <TableHead>№ маршрута</TableHead>
                   <TableHead>Кластер</TableHead>
-                  <TableHead>Длина, км</TableHead>
-                  <TableHead>Время, мин</TableHead>
-                  <TableHead>Загрузка</TableHead>
+                  <TableHead className="hidden sm:table-cell">Длина, км</TableHead>
+                  <TableHead className="hidden sm:table-cell">Время, мин</TableHead>
+                  <TableHead className="hidden sm:table-cell">Загрузка</TableHead>
                   <TableHead>Эффективность</TableHead>
                 </TableRow>
               </TableHeader>
@@ -101,9 +105,9 @@ export default function AnalyticsPage() {
                         />
                         Кластер {p.cluster + 1}
                       </TableCell>
-                      <TableCell>{p.features[0]?.toFixed(2)}</TableCell>
-                      <TableCell>{p.features[1]?.toFixed(1)}</TableCell>
-                      <TableCell>{p.features[2]?.toFixed(0)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{p.features[0]?.toFixed(2)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{p.features[1]?.toFixed(1)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{p.features[2]?.toFixed(0)}</TableCell>
                       <TableCell>
                         <Badge variant={p.efficiency > 0.5 ? "default" : "secondary"}>
                           {p.efficiency.toFixed(3)}

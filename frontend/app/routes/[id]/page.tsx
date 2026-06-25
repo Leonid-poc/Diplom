@@ -2,16 +2,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
-import { MapPin } from "lucide-react";
+import { MapPin, ChevronLeft } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { api, type RouteDetail } from "@/lib/api";
+import Link from "next/link";
 
 const LeafletMap = dynamic(() => import("@/components/map/LeafletMap"), {
   ssr: false,
-  loading: () => <div className="h-[400px] bg-muted animate-pulse rounded-md" />,
+  loading: () => <div className="h-[300px] sm:h-[400px] bg-muted animate-pulse rounded-md" />,
 });
 
 export default function RouteDetailsPage() {
@@ -41,11 +42,18 @@ export default function RouteDetailsPage() {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-bold mb-6">
+      <Link
+        href="/routes"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-3"
+      >
+        <ChevronLeft size={16} />
+        К списку маршрутов
+      </Link>
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">
         №{data.route_number} — {data.name}
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
         {/* Карточка метрик */}
         <Card>
           <CardHeader>
@@ -96,7 +104,7 @@ export default function RouteDetailsPage() {
           <CardHeader>
             <CardTitle>Геометрия маршрута</CardTitle>
           </CardHeader>
-          <CardContent className="h-[400px] p-0">
+          <CardContent className="h-[300px] sm:h-[400px] p-0">
             <LeafletMap
               routeGeometry={data.geometry as [number, number][]}
               highlightedStops={data.stops.map((s) => ({
@@ -120,10 +128,10 @@ export default function RouteDetailsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12">№</TableHead>
+                <TableHead className="w-10 sm:w-12">№</TableHead>
                 <TableHead>Название</TableHead>
-                <TableHead className="w-28">Широта</TableHead>
-                <TableHead className="w-28">Долгота</TableHead>
+                <TableHead className="hidden sm:table-cell w-28">Широта</TableHead>
+                <TableHead className="hidden sm:table-cell w-28">Долгота</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -136,8 +144,8 @@ export default function RouteDetailsPage() {
                       {s.name}
                     </span>
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{s.lat.toFixed(5)}</TableCell>
-                  <TableCell className="font-mono text-xs">{s.lon.toFixed(5)}</TableCell>
+                  <TableCell className="hidden sm:table-cell font-mono text-xs">{s.lat.toFixed(5)}</TableCell>
+                  <TableCell className="hidden sm:table-cell font-mono text-xs">{s.lon.toFixed(5)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -20,7 +20,7 @@ export default function ReportsPage() {
 
   return (
     <AppShell>
-      <h1 className="text-2xl font-bold mb-6">Аналитические отчёты</h1>
+      <h1 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Аналитические отчёты</h1>
       <Card>
         <CardHeader>
           <CardTitle>Сохранённые отчёты</CardTitle>
@@ -38,7 +38,7 @@ export default function ReportsPage() {
                 <TableRow>
                   <TableHead>ID</TableHead>
                   <TableHead>Название</TableHead>
-                  <TableHead>Дата</TableHead>
+                  <TableHead className="hidden sm:table-cell">Дата</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -46,7 +46,7 @@ export default function ReportsPage() {
                   <TableRow key={r.id}>
                     <TableCell>{r.id}</TableCell>
                     <TableCell>{r.title}</TableCell>
-                    <TableCell>{new Date(r.created_at).toLocaleString("ru-RU")}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{new Date(r.created_at).toLocaleString("ru-RU")}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -17,10 +17,10 @@ export default function RoutesPage() {
 
   return (
     <AppShell>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Маршруты</h1>
-        <Link href="/routes/new">
-          <Button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">Маршруты</h1>
+        <Link href="/routes/new" className="sm:self-auto">
+          <Button className="w-full sm:w-auto">
             <Plus size={16} className="mr-1" />
             Рассчитать новый
           </Button>
@@ -37,8 +37,8 @@ export default function RoutesPage() {
                 <TableRow>
                   <TableHead>№</TableHead>
                   <TableHead>Название</TableHead>
-                  <TableHead>Тип</TableHead>
-                  <TableHead>Длина, км</TableHead>
+                  <TableHead className="hidden sm:table-cell">Тип</TableHead>
+                  <TableHead className="hidden sm:table-cell">Длина, км</TableHead>
                   <TableHead>Статус</TableHead>
                 </TableRow>
               </TableHeader>
@@ -51,8 +51,8 @@ export default function RoutesPage() {
                         {r.name}
                       </Link>
                     </TableCell>
-                    <TableCell>{r.type}</TableCell>
-                    <TableCell>{String(r.total_length)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{r.type}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{String(r.total_length)}</TableCell>
                     <TableCell>
                       {r.is_active ? <Badge>активный</Badge> : <Badge variant="secondary">неактивный</Badge>}
                     </TableCell>

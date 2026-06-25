@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -7,6 +7,13 @@ export const metadata: Metadata = {
   description:
     "Программно-информационная система автоматизированного проектирования " +
     "городских маршрутов пассажирских перевозок. ОГУ, 09.03.04, ВКР Л.Е. Георга.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

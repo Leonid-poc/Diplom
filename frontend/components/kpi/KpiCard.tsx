@@ -16,7 +16,7 @@ export function KpiCard({ title, value, Icon, hint }: Props) {
         {Icon ? <Icon size={18} className="text-muted-foreground" /> : null}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-xl sm:text-2xl font-bold">{value}</div>
         {hint && <p className="text-xs text-muted-foreground mt-1">{hint}</p>}
       </CardContent>
     </Card>
