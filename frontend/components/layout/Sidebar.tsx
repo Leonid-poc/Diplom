@@ -29,7 +29,7 @@ export function Sidebar({ open, onNavigate }: Props) {
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r bg-muted/30 p-4 transition-transform duration-200",
+        "fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r bg-background p-4 transition-transform duration-200 shadow-xl lg:shadow-none",
         "lg:relative lg:z-auto lg:translate-x-0",
         open ? "translate-x-0" : "-translate-x-full",
       )}
